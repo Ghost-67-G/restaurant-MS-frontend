@@ -2,9 +2,16 @@ import api from "../lib/api";
 
 export const menuService = {
   getMenuItems: async (params = {}) => {
-    const { page = 1, limit = 10 } = params;
+    const { page = 1, limit = 10, name, categoryId, isAvailable } = params;
+    const queryParams = { page, limit };
+    
+    // Only add optional params if they have values
+    if (name) queryParams.name = name;
+    if (categoryId) queryParams.categoryId = categoryId;
+    if (isAvailable !== undefined) queryParams.isAvailable = isAvailable;
+    
     const response = await api.get("/menu/items", {
-      params: { page, limit },
+      params: queryParams,
     });
     return response.data;
   },

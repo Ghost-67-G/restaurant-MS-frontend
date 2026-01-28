@@ -1,35 +1,83 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import MenuItemButton from "../components/pos/MenuItemButton";
 import CartPanel from "../components/pos/CartPanel";
-import { useMenuItems } from "../hooks/useMenu";
+import { useInfiniteMenuItems } from "../hooks/useMenu";
+import { useCreateOrder } from "../hooks/useOrder";
 import { useCartStore } from "../stores/cart.store";
+import { useDebounce } from "../hooks/useDebounce";
 import { Loader2, Search } from "lucide-react";
 
 export default function POS() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: menuItems = { results: [], page: 1, limit: 100, totalPages: 1, totalResults: 0 }, isLoading, isError } = useMenuItems({ limit: 100 });
-  const clearCart = useCartStore((state) => state.clearCart);
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const observer = useRef();
+  const createOrderMutation = useCreateOrder();
+  const { items, getTotal, clearCart } = useCartStore();
+
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteMenuItems({
+    limit: 20,
+    isAvailable: true,
+    name: debouncedSearch || undefined,
+  });
+
+  const lastItemRef = useCallback(
+    (node) => {
+      if (isLoading) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, hasNextPage, isFetchingNextPage, fetchNextPage]
+  );
+
+  const menuItems = data?.pages.flatMap((page) => page.results) || [];
 
   const handlePlaceOrder = () => {
-    const items = useCartStore.getState().items;
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
 
-    // TODO: Implement order creation
-    console.log("Place order:", items);
-    alert("Order placed successfully!");
-    clearCart();
+    const orderData = {
+      items: items.map((item) => ({
+        menuItemId: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      totalAmount: getTotal(),
+    };
+
+    createOrderMutation.mutate(orderData, {
+      onSuccess: () => {
+        toast.success("Order placed successfully!");
+        clearCart();
+        navigate("/orders");
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || "Failed to place order");
+      },
+    });
   };
-
-  const filteredItems = menuItems.results.filter(
-    (item) =>
-      item.isAvailable &&
-      item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <DashboardLayout>
-      <div className="fixed inset-0 md:pl-64 pt-16 bg-slate-50">
+      <div className="h-[calc(100vh-96px)] bg-slate-50">
         <div className="h-full flex">
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="p-4 bg-white border-b border-slate-200">
@@ -56,24 +104,38 @@ export default function POS() {
                 <div className="flex items-center justify-center h-full">
                   <p className="text-red-600">Failed to load menu items</p>
                 </div>
-              ) : filteredItems.length === 0 ? (
+              ) : menuItems.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <p className="text-slate-400">
                     {searchQuery ? "No items found" : "No available menu items"}
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 max-w-7xl">
-                  {filteredItems.map((item) => (
-                    <MenuItemButton key={item.id} item={item} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 max-w-7xl">
+                    {menuItems.map((item, index) => {
+                      if (menuItems.length === index + 1) {
+                        return (
+                          <div key={item.id} ref={lastItemRef}>
+                            <MenuItemButton item={item} />
+                          </div>
+                        );
+                      }
+                      return <MenuItemButton key={item.id} item={item} />;
+                    })}
+                  </div>
+                  {isFetchingNextPage && (
+                    <div className="flex justify-center mt-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
 
           <div className="w-96 shrink-0">
-            <CartPanel onPlaceOrder={handlePlaceOrder} />
+            <CartPanel onPlaceOrder={handlePlaceOrder} isPlacingOrder={createOrderMutation.isPending} />
           </div>
         </div>
       </div>

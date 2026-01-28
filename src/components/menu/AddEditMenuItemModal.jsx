@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { useCreateMenuItem, useUpdateMenuItem } from "../../hooks/useMenu";
+import { useInventoryItems } from "../../hooks/useInventory";
 
 export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
   const [formData, setFormData] = useState({
@@ -11,11 +12,13 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
     price: "",
     costPrice: "",
     isAvailable: true,
+    inventoryItemId: "",
   });
   const [error, setError] = useState("");
 
   const createMutation = useCreateMenuItem();
   const updateMutation = useUpdateMenuItem();
+  const { data: inventoryData } = useInventoryItems({ limit: 1000 });
 
   const isEditing = !!item;
   const mutation = isEditing ? updateMutation : createMutation;
@@ -27,6 +30,7 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
         price: item.price || "",
         costPrice: item.costPrice || "",
         isAvailable: item.isAvailable !== false,
+        inventoryItemId: item.inventoryItemId || "",
       });
     } else {
       setFormData({
@@ -34,6 +38,7 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
         price: "",
         costPrice: "",
         isAvailable: true,
+        inventoryItemId: "",
       });
     }
     setError("");
@@ -64,6 +69,11 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
       costPrice: formData.costPrice ? Number(formData.costPrice) : 0,
       isAvailable: formData.isAvailable,
     };
+
+    // Only include inventoryItemId if one is selected
+    if (formData.inventoryItemId) {
+      submitData.inventoryItemId = formData.inventoryItemId;
+    }
 
     if (isEditing) {
       mutation.mutate(
@@ -172,6 +182,29 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
                 className="h-11"
               />
               <p className="text-xs text-slate-500">Optional: Your cost for this item</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="inventoryItemId" className="text-slate-700 font-medium">
+                Link to Inventory (Optional)
+              </Label>
+              <select
+                id="inventoryItemId"
+                name="inventoryItemId"
+                value={formData.inventoryItemId}
+                onChange={handleChange}
+                disabled={mutation.isPending}
+                className="w-full h-11 px-3 rounded-md border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">None</option>
+                {inventoryData?.results?.map((inventoryItem) => (
+                  <option key={inventoryItem.id} value={inventoryItem.id}>
+                    {inventoryItem.name} (Qty: {inventoryItem.quantity})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500">
+                Link this menu item to an inventory item for automatic stock tracking
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <input

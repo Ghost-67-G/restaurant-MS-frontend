@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { menuService } from "../services/menu.service";
 import { queryClient } from "../lib/queryClient";
 
@@ -6,6 +6,20 @@ export const useMenuItems = (params = {}) => {
   return useQuery({
     queryKey: ["menuItems", params],
     queryFn: () => menuService.getMenuItems(params),
+  });
+};
+
+export const useInfiniteMenuItems = (params = {}) => {
+  return useInfiniteQuery({
+    queryKey: ["menuItems", "infinite", params],
+    queryFn: ({ pageParam = 1 }) => menuService.getMenuItems({ ...params, page: pageParam }),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.page < lastPage.totalPages) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
   });
 };
 

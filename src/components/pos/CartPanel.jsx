@@ -2,7 +2,7 @@ import { Plus, Minus, X } from "lucide-react";
 import { useCartStore } from "../../stores/cart.store";
 import { Button } from "../ui/button";
 
-export default function CartPanel({ onPlaceOrder }) {
+export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
   const { items, incrementQuantity, decrementQuantity, removeItem, getTotal, clearCart } = useCartStore();
 
   const total = getTotal();
@@ -86,10 +86,10 @@ export default function CartPanel({ onPlaceOrder }) {
         </div>
         <Button
           onClick={onPlaceOrder}
-          disabled={items.length === 0}
+          disabled={items.length === 0 || isPlacingOrder}
           className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white text-lg font-semibold"
         >
-          Place Order
+          {isPlacingOrder ? "Placing Order..." : "Place Order"}
         </Button>
       </div>
     </div>

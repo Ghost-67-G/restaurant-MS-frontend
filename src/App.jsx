@@ -1,15 +1,19 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "react-hot-toast";
 import { queryClient } from "./lib/queryClient";
 import { useAuthStore } from "./stores/auth.store";
 import { authService } from "./services/auth.service";
+import RoleGuard from "./components/guards/RoleGuard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import KitchenDashboard from "./pages/KitchenDashboard";
 import POS from "./pages/POS";
 import Orders from "./pages/Orders";
 import Menu from "./pages/Menu";
+import Inventory from "./pages/Inventory";
 import "./App.css";
 
 // Auth Initializer Component
@@ -25,7 +29,7 @@ function AuthInitializer({ children }) {
         try {
           const data = await authService.getMe();
           setAuth(data.user);
-        } catch (error) {
+        } catch (_error) {
           // Token is invalid, clear auth state
           clearAuth();
         }
@@ -79,7 +83,17 @@ function PublicRoute({ children }) {
 
 // Temporary Dashboard Component
 function DashboardRedirect() {
-  return <Navigate to="/dashboard" replace />;
+  const user = useAuthStore((state) => state.user);
+  const userRole = user?.role || "owner";
+
+  // Redirect to appropriate page based on role
+  if (userRole === "cashier") {
+    return <Navigate to="/pos" replace />;
+  } else if (userRole === "kitchen") {
+    return <Navigate to="/kitchen" replace />;
+  } else {
+    return <Navigate to="/dashboard" replace />;
+  }
 }
 
 function App() {
@@ -87,6 +101,22 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthInitializer>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+              success: {
+                iconTheme: {
+                  primary: '#f97316',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
           <Routes>
             <Route
               path="/login"
@@ -108,7 +138,19 @@ function App() {
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <RoleGuard allowedRoles={["owner"]}>
+                    <Dashboard />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kitchen"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["kitchen"]}>
+                    <KitchenDashboard />
+                  </RoleGuard>
                 </ProtectedRoute>
               }
             />
@@ -116,7 +158,9 @@ function App() {
               path="/pos"
               element={
                 <ProtectedRoute>
-                  <POS />
+                  <RoleGuard allowedRoles={["owner", "cashier"]}>
+                    <POS />
+                  </RoleGuard>
                 </ProtectedRoute>
               }
             />
@@ -124,7 +168,9 @@ function App() {
               path="/orders"
               element={
                 <ProtectedRoute>
-                  <Orders />
+                  <RoleGuard allowedRoles={["owner", "cashier", "kitchen"]}>
+                    <Orders />
+                  </RoleGuard>
                 </ProtectedRoute>
               }
             />
@@ -132,7 +178,19 @@ function App() {
               path="/menu"
               element={
                 <ProtectedRoute>
-                  <Menu />
+                  <RoleGuard allowedRoles={["owner"]}>
+                    <Menu />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inventory"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["owner"]}>
+                    <Inventory />
+                  </RoleGuard>
                 </ProtectedRoute>
               }
             />

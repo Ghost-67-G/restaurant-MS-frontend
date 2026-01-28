@@ -1,18 +1,28 @@
 import { Link, useLocation } from "react-router-dom";
 import { Utensils, LayoutDashboard, ShoppingCart, ClipboardList, UtensilsCrossed, Package, BarChart3 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { useAuthStore } from "../../stores/auth.store";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, disabled: false },
-  { name: "POS", href: "/pos", icon: ShoppingCart, disabled: false },
-  { name: "Orders", href: "/orders", icon: ClipboardList, disabled: false },
-  { name: "Menu", href: "/menu", icon: UtensilsCrossed, disabled: false },
-  { name: "Inventory", href: "/inventory", icon: Package, disabled: true },
-  { name: "Reports", href: "/reports", icon: BarChart3, disabled: true },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["owner"] },
+  { name: "Kitchen", href: "/kitchen", icon: LayoutDashboard, roles: ["kitchen"] },
+  { name: "POS", href: "/pos", icon: ShoppingCart, roles: ["owner", "cashier"] },
+  { name: "Orders", href: "/orders", icon: ClipboardList, roles: ["owner", "cashier", "kitchen"] },
+  { name: "Menu", href: "/menu", icon: UtensilsCrossed, roles: ["owner"] },
+  { name: "Inventory", href: "/inventory", icon: Package, roles: ["owner"] },
+  { name: "Reports", href: "/reports", icon: BarChart3, roles: ["owner"], disabled: true },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
+  const user = useAuthStore((state) => state.user);
+  
+  const userRole = user?.role || "owner";
+
+  // Filter navigation based on user role
+  const accessibleNav = navigation.filter((item) => 
+    item.roles.includes(userRole)
+  );
 
   return (
     <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-slate-900 text-white">
@@ -26,7 +36,7 @@ export default function Sidebar() {
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navigation.map((item) => {
+          {accessibleNav.map((item) => {
             const isActive = location.pathname === item.href;
             const Icon = item.icon;
             

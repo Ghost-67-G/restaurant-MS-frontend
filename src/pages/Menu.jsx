@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import AddEditMenuItemModal from "../components/menu/AddEditMenuItemModal";
 import MenuItemRow from "../components/menu/MenuItemRow";
 import Pagination from "../components/ui/pagination";
 import { Button } from "../components/ui/button";
 import { useMenuItems, useDeleteMenuItem } from "../hooks/useMenu";
+import { useDebounce } from "../hooks/useDebounce";
 import { Plus, Loader2, Search } from "lucide-react";
 
 export default function Menu() {
@@ -14,9 +15,18 @@ export default function Menu() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
   const { data: menuItems = { results: [], page: 1, limit: 10, totalPages: 1, totalResults: 0}, isLoading, isError } = useMenuItems({
     page: currentPage,
     limit: itemsPerPage,
+    name: debouncedSearch || undefined,
   });
 
   const deleteMutation = useDeleteMenuItem();
