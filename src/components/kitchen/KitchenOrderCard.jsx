@@ -1,4 +1,3 @@
-import { useOrders } from "../../hooks/useOrder";
 import { useUpdateOrder } from "../../hooks/useOrder";
 import { Clock, ChefHat, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
@@ -11,7 +10,7 @@ export default function KitchenOrderCard({ order }) {
       { orderId: order.id, data: { status: newStatus } },
       {
         onSuccess: () => {
-          toast.success(`Order ${newStatus === "preparing" ? "moved to preparing" : "completed"}!`);
+          toast.success(`Order ${newStatus === "preparing" ? "moved to preparing" : "marked ready"}!`);
         },
         onError: (error) => {
           toast.error(error.response?.data?.message || "Failed to update order");
@@ -37,7 +36,7 @@ export default function KitchenOrderCard({ order }) {
     const badges = {
       pending: "bg-yellow-100 text-yellow-800",
       preparing: "bg-blue-100 text-blue-800",
-      completed: "bg-green-100 text-green-800",
+      ready: "bg-green-100 text-green-800",
     };
     return badges[order.status] || badges.pending;
   };
@@ -91,12 +90,12 @@ export default function KitchenOrderCard({ order }) {
         )}
         {order.status === "preparing" && (
           <button
-            onClick={() => handleStatusChange("completed")}
+            onClick={() => handleStatusChange("ready")}
             disabled={updateOrderMutation.isPending}
             className="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <CheckCircle className="h-4 w-4" />
-            Mark Complete
+            Mark Ready
           </button>
         )}
       </div>

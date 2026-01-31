@@ -1,4 +1,4 @@
-export default function OrderRow({ order, onUpdateStatus, onClick }) {
+export default function OrderRow({ order, onClick }) {
   const formatDate = (date) => {
     return new Date(date).toLocaleString("en-US", {
       month: "short",

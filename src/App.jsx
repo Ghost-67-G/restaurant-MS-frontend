@@ -29,6 +29,7 @@ function AuthInitializer({ children }) {
         try {
           const data = await authService.getMe();
           setAuth(data.user);
+        // eslint-disable-next-line no-unused-vars
         } catch (_error) {
           // Token is invalid, clear auth state
           clearAuth();

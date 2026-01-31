@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import OrderRow from "../components/orders/OrderRow";
@@ -30,6 +30,10 @@ export default function Orders() {
     if (userRole === "cashier") {
       return [
         { label: "Pending", value: "pending" },
+        { label: "Preparing", value: "preparing" },
+        { label: "Ready", value: "ready" },
+        { label: "Completed", value: "completed" },
+        { label: "Cancelled", value: "cancelled" },
       ];
     }
     if (userRole === "kitchen") {
@@ -37,7 +41,9 @@ export default function Orders() {
         { label: "All", value: "" },
         { label: "Pending", value: "pending" },
         { label: "Preparing", value: "preparing" },
+        { label: "Ready", value: "ready" },
         { label: "Completed", value: "completed" },
+        { label: "Cancelled", value: "cancelled" },
       ];
     }
     // Owner sees all tabs
@@ -45,6 +51,7 @@ export default function Orders() {
       { label: "All", value: "" },
       { label: "Pending", value: "pending" },
       { label: "Preparing", value: "preparing" },
+      { label: "Ready", value: "ready" },
       { label: "Completed", value: "completed" },
       { label: "Cancelled", value: "cancelled" },
     ];
@@ -52,7 +59,17 @@ export default function Orders() {
 
   const availableTabs = getAvailableTabs();
 
-  const { data: ordersData = { results: [], page: 1, limit: 10, totalPages: 1, totalResults: 0 }, isLoading, isError } = useOrders({
+  const {
+    data: ordersData = {
+      results: [],
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+      totalResults: 0,
+    },
+    isLoading,
+    isError,
+  } = useOrders({
     page: currentPage,
     limit: itemsPerPage,
     status: statusFilter || undefined,
@@ -62,8 +79,8 @@ export default function Orders() {
   const updateOrderMutation = useUpdateOrder();
 
   // Get the selected order from the orders list to keep it in sync
-  const selectedOrder = selectedOrderId 
-    ? ordersData.results.find(order => order.id === selectedOrderId) 
+  const selectedOrder = selectedOrderId
+    ? ordersData.results.find((order) => order.id === selectedOrderId)
     : null;
 
   const handleUpdateStatus = (orderId, status) => {
@@ -74,9 +91,11 @@ export default function Orders() {
           toast.success("Order updated successfully!");
         },
         onError: (error) => {
-          toast.error(error.response?.data?.message || "Failed to update order");
+          toast.error(
+            error.response?.data?.message || "Failed to update order",
+          );
         },
-      }
+      },
     );
   };
 
@@ -100,11 +119,11 @@ export default function Orders() {
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-slate-900">Orders</h2>
           <p className="text-slate-600 mt-1">
-            {userRole === "cashier" 
-              ? "View pending orders" 
+            {userRole === "cashier"
+              ? "View pending orders"
               : userRole === "kitchen"
-              ? "Manage kitchen orders"
-              : "Manage your restaurant orders"}
+                ? "Manage kitchen orders"
+                : "Manage your restaurant orders"}
           </p>
         </div>
 
