@@ -16,7 +16,7 @@ export default function POS() {
   const debouncedSearch = useDebounce(searchQuery, 300);
   const observer = useRef();
   const createOrderMutation = useCreateOrder();
-  const { items, getTotal, clearCart } = useCartStore();
+  const { items, getTotal, clearCart, orderType, tableNumber, deliveryFee } = useCartStore();
 
   const {
     data,
@@ -53,6 +53,11 @@ export default function POS() {
       return;
     }
 
+    if (orderType === "dine-in" && !tableNumber) {
+      toast.error("Please enter table number for dine-in orders");
+      return;
+    }
+
     const orderData = {
       items: items.map((item) => ({
         menuItemId: item.id,
@@ -61,6 +66,9 @@ export default function POS() {
         quantity: item.quantity,
       })),
       totalAmount: getTotal(),
+      orderType,
+      ...(orderType === "dine-in" && { tableNumber }),
+      ...(orderType === "delivery" && deliveryFee > 0 && { deliveryFee }),
     };
 
     createOrderMutation.mutate(orderData, {

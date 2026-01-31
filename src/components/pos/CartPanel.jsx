@@ -1,11 +1,32 @@
-import { Plus, Minus, X } from "lucide-react";
+import { Plus, Minus, X, Store, ShoppingBag, Truck } from "lucide-react";
 import { useCartStore } from "../../stores/cart.store";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
-  const { items, incrementQuantity, decrementQuantity, removeItem, getTotal, clearCart } = useCartStore();
+  const { 
+    items, 
+    incrementQuantity, 
+    decrementQuantity, 
+    removeItem, 
+    getTotal, 
+    clearCart,
+    orderType,
+    setOrderType,
+    tableNumber,
+    setTableNumber,
+    deliveryFee,
+    setDeliveryFee,
+  } = useCartStore();
 
   const total = getTotal();
+  const itemsSubtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const orderTypes = [
+    { value: "dine-in", label: "Dine In", icon: Store },
+    { value: "takeaway", label: "Takeaway", icon: ShoppingBag },
+    { value: "delivery", label: "Delivery", icon: Truck },
+  ];
 
   return (
     <div className="flex flex-col h-full bg-white border-l border-slate-200">
@@ -21,6 +42,60 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Order Type Selection */}
+      <div className="px-4 py-3 border-b border-slate-200 bg-white">
+        <label className="text-xs font-semibold text-slate-600 mb-2 block">
+          ORDER TYPE
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {orderTypes.map((type) => {
+            const Icon = type.icon;
+            return (
+              <button
+                key={type.value}
+                onClick={() => setOrderType(type.value)}
+                className={`p-2 rounded-lg border-2 transition-all ${
+                  orderType === type.value
+                    ? "border-orange-500 bg-orange-50 text-orange-600"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                <Icon className="h-5 w-5 mx-auto mb-1" />
+                <span className="text-xs font-medium">{type.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Table Number for Dine-In */}
+        {orderType === "dine-in" && (
+          <div className="mt-3">
+            <Input
+              type="text"
+              placeholder="Table Number"
+              value={tableNumber}
+              onChange={(e) => setTableNumber(e.target.value)}
+              className="h-9 text-sm"
+            />
+          </div>
+        )}
+
+        {/* Delivery Fee for Delivery */}
+        {orderType === "delivery" && (
+          <div className="mt-3">
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Delivery Fee (optional)"
+              value={deliveryFee || ""}
+              onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)}
+              className="h-9 text-sm"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -77,8 +152,14 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-slate-600">
             <span>Subtotal</span>
-            <span className="font-medium">${total.toFixed(2)}</span>
+            <span className="font-medium">${itemsSubtotal.toFixed(2)}</span>
           </div>
+          {orderType === "delivery" && deliveryFee > 0 && (
+            <div className="flex justify-between text-sm text-slate-600">
+              <span>Delivery Fee</span>
+              <span className="font-medium">${deliveryFee.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-lg font-bold text-slate-900">
             <span>Total</span>
             <span className="text-orange-500">${total.toFixed(2)}</span>

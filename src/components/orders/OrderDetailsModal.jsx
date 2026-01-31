@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Store, ShoppingBag, Truck } from "lucide-react";
 import { Button } from "../ui/button";
 
 const STATUS_OPTIONS = [
@@ -35,6 +35,35 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
     return order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   };
 
+  const getOrderTypeIcon = () => {
+    const icons = {
+      "dine-in": Store,
+      takeaway: ShoppingBag,
+      delivery: Truck,
+    };
+    return icons[order.orderType] || Store;
+  };
+
+  const getOrderTypeBadge = () => {
+    const badges = {
+      "dine-in": "bg-purple-100 text-purple-800",
+      takeaway: "bg-orange-100 text-orange-800",
+      delivery: "bg-cyan-100 text-cyan-800",
+    };
+    return badges[order.orderType] || badges["dine-in"];
+  };
+
+  const getOrderTypeLabel = () => {
+    const labels = {
+      "dine-in": "Dine In",
+      takeaway: "Takeaway",
+      delivery: "Delivery",
+    };
+    return labels[order.orderType] || "Dine In";
+  };
+
+  const OrderTypeIcon = getOrderTypeIcon();
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
@@ -66,6 +95,24 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
 
           {/* Content */}
           <div className="p-6 space-y-6">
+            {/* Order Type & Details */}
+            <div className="flex items-center gap-4 pb-4 border-b border-slate-200">
+              <span className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 ${getOrderTypeBadge()}`}>
+                <OrderTypeIcon className="h-4 w-4" />
+                {getOrderTypeLabel()}
+              </span>
+              {order.orderType === "dine-in" && order.tableNumber && (
+                <span className="text-sm text-slate-600">
+                  Table: <span className="font-semibold">{order.tableNumber}</span>
+                </span>
+              )}
+              {order.orderType === "delivery" && order.deliveryFee > 0 && (
+                <span className="text-sm text-slate-600">
+                  Delivery Fee: <span className="font-semibold">${order.deliveryFee.toFixed(2)}</span>
+                </span>
+              )}
+            </div>
+
             {/* Current Status */}
             <div>
               <h4 className="text-sm font-medium text-slate-700 mb-3">Current Status</h4>

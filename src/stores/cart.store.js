@@ -2,6 +2,21 @@ import { create } from "zustand";
 
 export const useCartStore = create((set, get) => ({
   items: [],
+  orderType: "dine-in", // dine-in, takeaway, delivery
+  tableNumber: "",
+  deliveryFee: 0,
+
+  setOrderType: (type) => {
+    set({ orderType: type });
+  },
+
+  setTableNumber: (number) => {
+    set({ tableNumber: number });
+  },
+
+  setDeliveryFee: (fee) => {
+    set({ deliveryFee: fee });
+  },
 
   addItem: (menuItem) => {
     const items = get().items;
@@ -65,14 +80,20 @@ export const useCartStore = create((set, get) => ({
   },
 
   clearCart: () => {
-    set({ items: [] });
+    set({ 
+      items: [],
+      orderType: "dine-in",
+      tableNumber: "",
+      deliveryFee: 0,
+    });
   },
 
   getTotal: () => {
-    return get().items.reduce(
+    const itemsTotal = get().items.reduce(
       (total, item) => total + item.price * item.quantity,
       0
     );
+    return itemsTotal + get().deliveryFee;
   },
 
   getItemCount: () => {

@@ -1,5 +1,5 @@
 import { useUpdateOrder } from "../../hooks/useOrder";
-import { Clock, ChefHat, CheckCircle } from "lucide-react";
+import { Clock, ChefHat, CheckCircle, Store, ShoppingBag, Truck } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function KitchenOrderCard({ order }) {
@@ -41,6 +41,35 @@ export default function KitchenOrderCard({ order }) {
     return badges[order.status] || badges.pending;
   };
 
+  const getOrderTypeIcon = () => {
+    const icons = {
+      "dine-in": Store,
+      takeaway: ShoppingBag,
+      delivery: Truck,
+    };
+    return icons[order.orderType] || Store;
+  };
+
+  const getOrderTypeBadge = () => {
+    const badges = {
+      "dine-in": "bg-purple-100 text-purple-800",
+      takeaway: "bg-orange-100 text-orange-800",
+      delivery: "bg-cyan-100 text-cyan-800",
+    };
+    return badges[order.orderType] || badges["dine-in"];
+  };
+
+  const getOrderTypeLabel = () => {
+    const labels = {
+      "dine-in": "Dine In",
+      takeaway: "Takeaway",
+      delivery: "Delivery",
+    };
+    return labels[order.orderType] || "Dine In";
+  };
+
+  const OrderTypeIcon = getOrderTypeIcon();
+
   return (
     <div className={`border-2 rounded-lg p-4 ${getStatusColor()} transition-all hover:shadow-md`}>
       {/* Header */}
@@ -51,9 +80,16 @@ export default function KitchenOrderCard({ order }) {
           </h3>
           <p className="text-sm text-slate-600">{formatTime(order.createdAt)}</p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge()}`}>
-          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-        </span>
+        <div className="flex flex-col gap-1 items-end">
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge()}`}>
+            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+          </span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${getOrderTypeBadge()}`}>
+            <OrderTypeIcon className="h-3 w-3" />
+            {getOrderTypeLabel()}
+            {order.orderType === "dine-in" && order.tableNumber && ` - T${order.tableNumber}`}
+          </span>
+        </div>
       </div>
 
       {/* Items */}
