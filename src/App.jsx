@@ -14,6 +14,7 @@ import POS from "./pages/POS";
 import Orders from "./pages/Orders";
 import Menu from "./pages/Menu";
 import Inventory from "./pages/Inventory";
+import TaxSettings from "./pages/TaxSettings";
 import "./App.css";
 
 // Auth Initializer Component
@@ -191,6 +192,16 @@ function App() {
                 <ProtectedRoute>
                   <RoleGuard allowedRoles={["owner"]}>
                     <Inventory />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tax-settings"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["owner"]}>
+                    <TaxSettings />
                   </RoleGuard>
                 </ProtectedRoute>
               }

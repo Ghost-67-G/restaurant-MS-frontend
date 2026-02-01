@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import DashboardLayout from "../components/layout/DashboardLayout";
@@ -6,6 +6,7 @@ import MenuItemButton from "../components/pos/MenuItemButton";
 import CartPanel from "../components/pos/CartPanel";
 import { useInfiniteMenuItems } from "../hooks/useMenu";
 import { useCreateOrder } from "../hooks/useOrder";
+import { useTaxes } from "../hooks/useTax";
 import { useCartStore } from "../stores/cart.store";
 import { useDebounce } from "../hooks/useDebounce";
 import { Loader2, Search } from "lucide-react";
@@ -16,7 +17,15 @@ export default function POS() {
   const debouncedSearch = useDebounce(searchQuery, 300);
   const observer = useRef();
   const createOrderMutation = useCreateOrder();
-  const { items, getTotal, clearCart, orderType, tableNumber, deliveryFee } = useCartStore();
+  const { data: taxesData } = useTaxes();
+  const { items, getTotal, getSubtotal, getTaxAmount, clearCart, orderType, tableNumber, deliveryFee, selectedTax, setSelectedTax } = useCartStore();
+
+  // Set default tax (first available) when taxes load - only once
+  useEffect(() => {
+    if (taxesData?.results && taxesData.results.length > 0 && selectedTax === null) {
+      setSelectedTax(taxesData.results[0]);
+    }
+  }, [taxesData]);
 
   const {
     data,
@@ -58,6 +67,10 @@ export default function POS() {
       return;
     }
 
+    const subtotal = getSubtotal();
+    const taxAmount = getTaxAmount();
+    const total = getTotal();
+
     const orderData = {
       items: items.map((item) => ({
         menuItemId: item.id,
@@ -65,10 +78,14 @@ export default function POS() {
         price: item.price,
         quantity: item.quantity,
       })),
-      totalAmount: getTotal(),
+      subtotal,
+      taxName: selectedTax?.name,
+      taxPercentage: selectedTax?.percentage,
+      taxAmount,
+      deliveryFee,
+      totalAmount: total,
       orderType,
       ...(orderType === "dine-in" && { tableNumber }),
-      ...(orderType === "delivery" && deliveryFee > 0 && { deliveryFee }),
     };
 
     createOrderMutation.mutate(orderData, {

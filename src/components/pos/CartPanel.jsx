@@ -1,5 +1,6 @@
 import { Plus, Minus, X, Store, ShoppingBag, Truck } from "lucide-react";
 import { useCartStore } from "../../stores/cart.store";
+import { useTaxes } from "../../hooks/useTax";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
@@ -9,7 +10,9 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
     incrementQuantity, 
     decrementQuantity, 
     removeItem, 
-    getTotal, 
+    getTotal,
+    getSubtotal,
+    getTaxAmount,
     clearCart,
     orderType,
     setOrderType,
@@ -17,10 +20,15 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
     setTableNumber,
     deliveryFee,
     setDeliveryFee,
+    selectedTax,
+    setSelectedTax,
   } = useCartStore();
 
+  const { data: taxesData } = useTaxes();
+
   const total = getTotal();
-  const itemsSubtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = getSubtotal();
+  const taxAmount = getTaxAmount();
 
   const orderTypes = [
     { value: "dine-in", label: "Dine In", icon: Store },
@@ -96,6 +104,34 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
             />
           </div>
         )}
+
+        {/* Tax Selection */}
+        {taxesData?.results && taxesData.results.length > 0 && (
+          <div className="mt-3">
+            <label className="text-xs font-semibold text-slate-600 mb-2 block">
+              TAX
+            </label>
+            <select
+              value={selectedTax?.id || ""}
+              onChange={(e) => {
+                if (e.target.value === "") {
+                  setSelectedTax(null);
+                } else {
+                  const tax = taxesData.results.find(t => t.id === e.target.value);
+                  setSelectedTax(tax);
+                }
+              }}
+              className="w-full h-9 px-3 rounded-md border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="">No Tax</option>
+              {taxesData.results.map((tax) => (
+                <option key={tax.id} value={tax.id}>
+                  {tax.name} ({tax.percentage}%)
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -152,8 +188,14 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-slate-600">
             <span>Subtotal</span>
-            <span className="font-medium">${itemsSubtotal.toFixed(2)}</span>
+            <span className="font-medium">${subtotal.toFixed(2)}</span>
           </div>
+          {selectedTax && taxAmount > 0 && (
+            <div className="flex justify-between text-sm text-slate-600">
+              <span>{selectedTax.name} ({selectedTax.percentage}%)</span>
+              <span className="font-medium">${taxAmount.toFixed(2)}</span>
+            </div>
+          )}
           {orderType === "delivery" && deliveryFee > 0 && (
             <div className="flex justify-between text-sm text-slate-600">
               <span>Delivery Fee</span>

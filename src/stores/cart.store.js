@@ -5,6 +5,11 @@ export const useCartStore = create((set, get) => ({
   orderType: "dine-in", // dine-in, takeaway, delivery
   tableNumber: "",
   deliveryFee: 0,
+  selectedTax: null, // Selected tax for this order
+
+  setSelectedTax: (tax) => {
+    set({ selectedTax: tax });
+  },
 
   setOrderType: (type) => {
     set({ orderType: type });
@@ -85,15 +90,31 @@ export const useCartStore = create((set, get) => ({
       orderType: "dine-in",
       tableNumber: "",
       deliveryFee: 0,
+      // Don't clear selectedTax as it should persist
     });
   },
 
-  getTotal: () => {
-    const itemsTotal = get().items.reduce(
+  getSubtotal: () => {
+    return get().items.reduce(
       (total, item) => total + item.price * item.quantity,
       0
     );
-    return itemsTotal + get().deliveryFee;
+  },
+
+  getTaxAmount: () => {
+    const tax = get().selectedTax;
+    if (!tax || !tax.percentage) {
+      return 0;
+    }
+    const subtotal = get().getSubtotal();
+    return (subtotal * tax.percentage) / 100;
+  },
+
+  getTotal: () => {
+    const subtotal = get().getSubtotal();
+    const taxAmount = get().getTaxAmount();
+    const deliveryFee = get().deliveryFee;
+    return subtotal + taxAmount + deliveryFee;
   },
 
   getItemCount: () => {

@@ -98,6 +98,7 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
             {/* Order Type & Details */}
             <div className="flex items-center gap-4 pb-4 border-b border-slate-200">
               <span className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 ${getOrderTypeBadge()}`}>
+                {/* eslint-disable-next-line react-hooks/static-components */}
                 <OrderTypeIcon className="h-4 w-4" />
                 {getOrderTypeLabel()}
               </span>
@@ -200,22 +201,24 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600">Subtotal</span>
                   <span className="text-slate-900 font-medium">
-                    ${calculateSubtotal().toFixed(2)}
+                    ${(order.subtotal || calculateSubtotal()).toFixed(2)}
                   </span>
                 </div>
-                {order.discount > 0 && (
+                {order.taxAmount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Discount</span>
-                    <span className="text-green-600 font-medium">
-                      -${Number(order.discount).toFixed(2)}
+                    <span className="text-slate-600">
+                      {order.taxName || "Tax"} {order.taxPercentage && `(${order.taxPercentage}%)`}
+                    </span>
+                    <span className="text-slate-900 font-medium">
+                      ${Number(order.taxAmount).toFixed(2)}
                     </span>
                   </div>
                 )}
-                {order.tax > 0 && (
+                {order.deliveryFee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Tax</span>
+                    <span className="text-slate-600">Delivery Fee</span>
                     <span className="text-slate-900 font-medium">
-                      ${Number(order.tax).toFixed(2)}
+                      ${Number(order.deliveryFee).toFixed(2)}
                     </span>
                   </div>
                 )}
