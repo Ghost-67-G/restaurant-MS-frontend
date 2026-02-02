@@ -84,21 +84,6 @@ function PublicRoute({ children }) {
   return children;
 }
 
-// Temporary Dashboard Component
-function DashboardRedirect() {
-  const user = useAuthStore((state) => state.user);
-  const userRole = user?.role || "owner";
-
-  // Redirect to appropriate page based on role
-  if (userRole === "cashier") {
-    return <Navigate to="/pos" replace />;
-  } else if (userRole === "kitchen") {
-    return <Navigate to="/kitchen" replace />;
-  } else {
-    return <Navigate to="/dashboard" replace />;
-  }
-}
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
