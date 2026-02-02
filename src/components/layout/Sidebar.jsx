@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Utensils, LayoutDashboard, ShoppingCart, ClipboardList, UtensilsCrossed, Package, BarChart3, Settings } from "lucide-react";
+import { Utensils, LayoutDashboard, ShoppingCart, ClipboardList, UtensilsCrossed, Package, BarChart3, Users,Settings } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useAuthStore } from "../../stores/auth.store";
 
@@ -10,6 +10,7 @@ const navigation = [
   { name: "Orders", href: "/orders", icon: ClipboardList, roles: ["owner", "cashier", "kitchen"] },
   { name: "Menu", href: "/menu", icon: UtensilsCrossed, roles: ["owner"] },
   { name: "Inventory", href: "/inventory", icon: Package, roles: ["owner"] },
+  { name: "Users", href: "/users", icon: Users, roles: ["owner"] },
   { name: "Tax Settings", href: "/tax-settings", icon: Settings, roles: ["owner"] },
   { name: "Reports", href: "/reports", icon: BarChart3, roles: ["owner"], disabled: true },
 ];

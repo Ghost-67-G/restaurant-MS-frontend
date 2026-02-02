@@ -14,6 +14,7 @@ import POS from "./pages/POS";
 import Orders from "./pages/Orders";
 import Menu from "./pages/Menu";
 import Inventory from "./pages/Inventory";
+import Users from "./pages/Users";
 import TaxSettings from "./pages/TaxSettings";
 import "./App.css";
 
@@ -24,13 +25,13 @@ function AuthInitializer({ children }) {
   useEffect(() => {
     const initAuth = async () => {
       const accessToken = localStorage.getItem("accessToken");
-      
+
       // If we have a token and user in store, try to verify authentication
       if (accessToken && isAuthenticated) {
         try {
           const data = await authService.getMe();
           setAuth(data.user);
-        // eslint-disable-next-line no-unused-vars
+          // eslint-disable-next-line no-unused-vars
         } catch (_error) {
           // Token is invalid, clear auth state
           clearAuth();
@@ -197,20 +198,23 @@ function App() {
               }
             />
             <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["owner"]}>
+                    <Users />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/tax-settings"
               element={
                 <ProtectedRoute>
                   <RoleGuard allowedRoles={["owner"]}>
                     <TaxSettings />
                   </RoleGuard>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <DashboardRedirect />
                 </ProtectedRoute>
               }
             />
