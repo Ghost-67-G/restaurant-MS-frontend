@@ -13,7 +13,8 @@ import KitchenDashboard from "./pages/KitchenDashboard";
 import POS from "./pages/POS";
 import Orders from "./pages/Orders";
 import Menu from "./pages/Menu";
-import Inventory from "./pages/Inventory";
+// import Inventory from "./pages/Inventory";
+import Ingredients from "./pages/Ingredients";
 import Users from "./pages/Users";
 import TaxSettings from "./pages/TaxSettings";
 import "./App.css";
@@ -172,12 +173,23 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* Inventory temporarily disabled - using ingredient-level tracking */}
+            {/* <Route
               path="/inventory"
               element={
                 <ProtectedRoute>
                   <RoleGuard allowedRoles={["owner"]}>
                     <Inventory />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            /> */}
+            <Route
+              path="/ingredients"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["owner"]}>
+                    <Ingredients />
                   </RoleGuard>
                 </ProtectedRoute>
               }
@@ -202,6 +214,14 @@ function App() {
                   </RoleGuard>
                 </ProtectedRoute>
               }
+            />
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <Navigate to="/dashboard" replace />
+                </ProtectedRoute>
+              } 
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

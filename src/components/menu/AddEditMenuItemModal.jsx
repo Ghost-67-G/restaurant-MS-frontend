@@ -4,7 +4,8 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { useCreateMenuItem, useUpdateMenuItem } from "../../hooks/useMenu";
-import { useInventoryItems } from "../../hooks/useInventory";
+import RecipeSelector from "./RecipeSelector";
+import { recipeService } from "../../services/ingredient.service";
 
 export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
   const [formData, setFormData] = useState({
@@ -14,17 +15,18 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
     isAvailable: true,
     inventoryItemId: "",
   });
+  const [recipes, setRecipes] = useState([]);
   const [error, setError] = useState("");
 
   const createMutation = useCreateMenuItem();
   const updateMutation = useUpdateMenuItem();
-  const { data: inventoryData } = useInventoryItems({ limit: 1000 });
 
   const isEditing = !!item;
   const mutation = isEditing ? updateMutation : createMutation;
 
   useEffect(() => {
     if (item) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: item.name || "",
         price: item.price || "",
@@ -32,6 +34,19 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
         isAvailable: item.isAvailable !== false,
         inventoryItemId: item.inventoryItemId || "",
       });
+      // Load recipes for this menu item
+      if (item.id) {
+        recipeService.getRecipesByMenuItem(item.id).then((data) => {
+          setRecipes(data.map(r => ({
+            ingredientId: r.ingredientId.id || r.ingredientId,
+            quantityUsed: r.quantityUsed
+          })));
+        }).catch(() => {
+          setRecipes([]);
+        });
+      } else {
+        setRecipes([]);
+      }
     } else {
       setFormData({
         name: "",
@@ -40,6 +55,7 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
         isAvailable: true,
         inventoryItemId: "",
       });
+      setRecipes([]);
     }
     setError("");
   }, [item, isOpen]);
@@ -79,7 +95,18 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
       mutation.mutate(
         { id: item.id, data: submitData },
         {
-          onSuccess: () => {
+          onSuccess: async () => {
+            // Update recipes if any
+            if (recipes.length > 0) {
+              try {
+                const validRecipes = recipes.filter(r => r.ingredientId && r.quantityUsed > 0);
+                if (validRecipes.length > 0) {
+                  await recipeService.updateMenuItemRecipes(item.id, validRecipes);
+                }
+              } catch (err) {
+                console.error('Failed to update recipes:', err);
+              }
+            }
             onClose();
           },
           onError: (err) => {
@@ -89,7 +116,18 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
       );
     } else {
       mutation.mutate(submitData, {
-        onSuccess: () => {
+        onSuccess: async (newItem) => {
+          // Create recipes if any
+          if (recipes.length > 0 && newItem.id) {
+            try {
+              const validRecipes = recipes.filter(r => r.ingredientId && r.quantityUsed > 0);
+              if (validRecipes.length > 0) {
+                await recipeService.updateMenuItemRecipes(newItem.id, validRecipes);
+              }
+            } catch (err) {
+              console.error('Failed to create recipes:', err);
+            }
+          }
           onClose();
         },
         onError: (err) => {
@@ -183,9 +221,10 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
               />
               <p className="text-xs text-slate-500">Optional: Your cost for this item</p>
             </div>
-            <div className="space-y-2">
+            {/* Inventory linking temporarily disabled - use Recipe section for ingredient tracking */}
+            {/* <div className="space-y-2">
               <Label htmlFor="inventoryItemId" className="text-slate-700 font-medium">
-                Link to Inventory (Optional)
+                Link to Inventory (Optional - Legacy)
               </Label>
               <select
                 id="inventoryItemId"
@@ -203,8 +242,12 @@ export default function AddEditMenuItemModal({ isOpen, onClose, item = null }) {
                 ))}
               </select>
               <p className="text-xs text-slate-500">
-                Link this menu item to an inventory item for automatic stock tracking
+                Legacy inventory linking. Use Recipe section below for ingredient-level tracking.
               </p>
+            </div> */}
+
+            <div className="border-t border-slate-200 pt-4">
+              <RecipeSelector recipes={recipes} onChange={setRecipes} />
             </div>
             <div className="flex items-center gap-2">
               <input
