@@ -18,7 +18,7 @@ export default function POS() {
   const observer = useRef();
   const createOrderMutation = useCreateOrder();
   const { data: taxesData } = useTaxes();
-  const { items, getTotal, getSubtotal, getTaxAmount, clearCart, orderType, tableNumber, deliveryFee, selectedTax, setSelectedTax } = useCartStore();
+  const { items, getTotal, getSubtotal, getTaxAmount, getDiscountAmount, clearCart, orderType, tableNumber, deliveryFee, selectedTax, setSelectedTax, discount } = useCartStore();
 
   // Set default tax (first available) when taxes load - only once
   useEffect(() => {
@@ -68,6 +68,7 @@ export default function POS() {
     }
 
     const subtotal = getSubtotal();
+    const discountAmount = getDiscountAmount();
     const taxAmount = getTaxAmount();
     const total = getTotal();
 
@@ -79,6 +80,11 @@ export default function POS() {
         quantity: item.quantity,
       })),
       subtotal,
+      ...(discount && {
+        discountType: discount.type,
+        discountValue: discount.value,
+        discountAmount,
+      }),
       taxName: selectedTax?.name,
       taxPercentage: selectedTax?.percentage,
       taxAmount,

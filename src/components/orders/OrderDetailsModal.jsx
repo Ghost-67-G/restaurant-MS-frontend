@@ -1,5 +1,11 @@
-import { X, Store, ShoppingBag, Truck } from "lucide-react";
+import { useState } from "react";
+import { X, Store, ShoppingBag, Truck, DollarSign, Ban, AlertCircle, FileText } from "lucide-react";
 import { Button } from "../ui/button";
+import { useOrderAdjustments, useRefundOrder, useVoidOrder } from "../../hooks/useAdjustments";
+import { useOrderInvoice, useCreateInvoice } from "../../hooks/useInvoice";
+import RefundVoidModal from "./RefundVoidModal";
+import InvoiceModal from "./InvoiceModal";
+import toast from "react-hot-toast";
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-yellow-100 text-yellow-800" },
@@ -10,6 +16,16 @@ const STATUS_OPTIONS = [
 ];
 
 export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStatus, isUpdating = false }) {
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [isVoidModalOpen, setIsVoidModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  
+  const { data: adjustments } = useOrderAdjustments(order?.id);
+  const { data: invoice, isLoading: loadingInvoice } = useOrderInvoice(order?.id);
+  const createInvoiceMutation = useCreateInvoice();
+  const refundMutation = useRefundOrder();
+  const voidMutation = useVoidOrder();
+
   if (!isOpen || !order) return null;
 
   const formatDate = (date) => {
@@ -63,6 +79,47 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
   };
 
   const OrderTypeIcon = getOrderTypeIcon();
+
+  const handleRefund = async (data) => {
+    try {
+      await refundMutation.mutateAsync(data);
+      toast.success('Order refunded successfully');
+      setIsRefundModalOpen(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to refund order');
+    }
+  };
+
+  const handleVoid = async (data) => {
+    try {
+      await voidMutation.mutateAsync(data);
+      toast.success('Order voided successfully');
+      setIsVoidModalOpen(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to void order');
+    }
+  };
+
+  const handleGenerateInvoice = async () => {
+    try {
+      await createInvoiceMutation.mutateAsync(order.id);
+      toast.success('Invoice generated successfully');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to generate invoice');
+    }
+  };
+
+  const handleViewInvoice = () => {
+    if (invoice) {
+      setIsInvoiceModalOpen(true);
+    } else {
+      handleGenerateInvoice();
+    }
+  };
+
+  const canRefund = order.status === 'completed' && !order.isVoided;
+  const canVoid = order.status !== 'completed' && order.status !== 'cancelled' && !order.isVoided;
+  const canGenerateInvoice = order.status === 'completed';
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -204,6 +261,20 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
                     ${(order.subtotal || calculateSubtotal()).toFixed(2)}
                   </span>
                 </div>
+                {order.discountAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-600">
+                      Discount {order.discountType && order.discountValue && (
+                        order.discountType === 'PERCENT' 
+                          ? `(${order.discountValue}%)` 
+                          : `($${Number(order.discountValue).toFixed(2)})`
+                      )}
+                    </span>
+                    <span className="text-green-600 font-medium">
+                      -${Number(order.discountAmount).toFixed(2)}
+                    </span>
+                  </div>
+                )}
                 {order.taxAmount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">
@@ -231,6 +302,69 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
               </div>
             </div>
 
+            {/* Adjustments Section */}
+            {adjustments && adjustments.length > 0 && (
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Adjustments
+                </h4>
+                <div className="space-y-2">
+                  {adjustments.map((adj) => (
+                    <div key={adj.id} className="flex justify-between items-start text-sm p-3 bg-slate-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            adj.type === 'REFUND' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {adj.type}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {new Date(adj.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-slate-600 text-xs">{adj.reason}</p>
+                      </div>
+                      <span className={`font-semibold ${
+                        adj.type === 'REFUND' ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
+                        -${Number(adj.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Void/Refund Status */}
+            {(order.isVoided || order.isRefunded) && (
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                {order.isVoided && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800 font-medium flex items-center gap-2">
+                      <Ban className="h-4 w-4" />
+                      This order has been voided
+                    </p>
+                  </div>
+                )}
+                {order.isRefunded && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800 font-medium flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      This order has been fully refunded
+                    </p>
+                  </div>
+                )}
+                {order.refundedAmount > 0 && !order.isRefunded && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800 font-medium">
+                      Partially refunded: ${Number(order.refundedAmount).toFixed(2)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Customer Info (if available) */}
             {order.customer && (
               <div className="mt-6 pt-6 border-t border-slate-200">
@@ -255,7 +389,40 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
+          <div className="flex items-center justify-between gap-3 p-6 border-t border-slate-200 bg-slate-50">
+            <div className="flex gap-2">
+              {canGenerateInvoice && (
+                <Button
+                  onClick={handleViewInvoice}
+                  variant="outline"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50 flex items-center gap-2"
+                  disabled={loadingInvoice || createInvoiceMutation.isPending}
+                >
+                  <FileText className="h-4 w-4" />
+                  {invoice ? 'View Invoice' : 'Generate Invoice'}
+                </Button>
+              )}
+              {canRefund && (
+                <Button
+                  onClick={() => setIsRefundModalOpen(true)}
+                  variant="outline"
+                  className="border-yellow-300 text-yellow-700 hover:bg-yellow-50 flex items-center gap-2"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  Refund
+                </Button>
+              )}
+              {canVoid && (
+                <Button
+                  onClick={() => setIsVoidModalOpen(true)}
+                  variant="outline"
+                  className="border-red-300 text-red-700 hover:bg-red-50 flex items-center gap-2"
+                >
+                  <Ban className="h-4 w-4" />
+                  Void
+                </Button>
+              )}
+            </div>
             <Button
               onClick={onClose}
               variant="outline"
@@ -266,6 +433,33 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
           </div>
         </div>
       </div>
+
+      {/* Refund/Void Modals */}
+      <RefundVoidModal
+        isOpen={isRefundModalOpen}
+        onClose={() => setIsRefundModalOpen(false)}
+        onSubmit={handleRefund}
+        type="REFUND"
+        order={order}
+        isLoading={refundMutation.isPending}
+      />
+      <RefundVoidModal
+        isOpen={isVoidModalOpen}
+        onClose={() => setIsVoidModalOpen(false)}
+        onSubmit={handleVoid}
+        type="VOID"
+        order={order}
+        isLoading={voidMutation.isPending}
+      />
+
+      {/* Invoice Modal */}
+      {invoice && (
+        <InvoiceModal
+          isOpen={isInvoiceModalOpen}
+          onClose={() => setIsInvoiceModalOpen(false)}
+          invoice={invoice}
+        />
+      )}
     </div>
   );
 }

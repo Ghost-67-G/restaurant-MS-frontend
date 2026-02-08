@@ -1,4 +1,4 @@
-import { Plus, Minus, X, Store, ShoppingBag, Truck } from "lucide-react";
+import { Plus, Minus, X, Store, ShoppingBag, Truck, Tag } from "lucide-react";
 import { useCartStore } from "../../stores/cart.store";
 import { useTaxes } from "../../hooks/useTax";
 import { Button } from "../ui/button";
@@ -13,6 +13,7 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
     getTotal,
     getSubtotal,
     getTaxAmount,
+    getDiscountAmount,
     clearCart,
     orderType,
     setOrderType,
@@ -22,6 +23,8 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
     setDeliveryFee,
     selectedTax,
     setSelectedTax,
+    discount,
+    setDiscount,
   } = useCartStore();
 
   const { data: taxesData } = useTaxes();
@@ -29,6 +32,7 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
   const total = getTotal();
   const subtotal = getSubtotal();
   const taxAmount = getTaxAmount();
+  const discountAmount = getDiscountAmount();
 
   const orderTypes = [
     { value: "dine-in", label: "Dine In", icon: Store },
@@ -132,6 +136,46 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
             </select>
           </div>
         )}
+
+        {/* Discount */}
+        <div className="mt-3">
+          <label className="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1">
+            <Tag className="h-3 w-3" />
+            DISCOUNT
+          </label>
+          <div className="flex gap-2">
+            <select
+              value={discount?.type || ""}
+              onChange={(e) => {
+                if (e.target.value === "") {
+                  setDiscount(null);
+                } else {
+                  setDiscount({ type: e.target.value, value: discount?.value || 0 });
+                }
+              }}
+              className="flex-1 h-9 px-3 rounded-md border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="">No Discount</option>
+              <option value="PERCENT">Percent (%)</option>
+              <option value="FLAT">Flat ($)</option>
+            </select>
+            {discount && (
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                max={discount.type === 'PERCENT' ? 100 : undefined}
+                placeholder={discount.type === 'PERCENT' ? '%' : '$'}
+                value={discount.value || ""}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  setDiscount({ ...discount, value });
+                }}
+                className="w-24 h-9 text-sm"
+              />
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -190,6 +234,15 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
             <span>Subtotal</span>
             <span className="font-medium">${subtotal.toFixed(2)}</span>
           </div>
+          {discount && discountAmount > 0 && (
+            <div className="flex justify-between text-sm text-green-600">
+              <span className="flex items-center gap-1">
+                <Tag className="h-3 w-3" />
+                Discount ({discount.type === 'PERCENT' ? `${discount.value}%` : `$${discount.value.toFixed(2)}`})
+              </span>
+              <span className="font-medium">-${discountAmount.toFixed(2)}</span>
+            </div>
+          )}
           {selectedTax && taxAmount > 0 && (
             <div className="flex justify-between text-sm text-slate-600">
               <span>{selectedTax.name} ({selectedTax.percentage}%)</span>

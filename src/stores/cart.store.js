@@ -6,6 +6,11 @@ export const useCartStore = create((set, get) => ({
   tableNumber: "",
   deliveryFee: 0,
   selectedTax: null, // Selected tax for this order
+  discount: null, // { type: 'PERCENT' | 'FLAT', value: number }
+
+  setDiscount: (discount) => {
+    set({ discount });
+  },
 
   setSelectedTax: (tax) => {
     set({ selectedTax: tax });
@@ -90,6 +95,7 @@ export const useCartStore = create((set, get) => ({
       orderType: "dine-in",
       tableNumber: "",
       deliveryFee: 0,
+      discount: null,
       // Don't clear selectedTax as it should persist
     });
   },
@@ -101,20 +107,36 @@ export const useCartStore = create((set, get) => ({
     );
   },
 
+  getDiscountAmount: () => {
+    const discount = get().discount;
+    if (!discount) {
+      return 0;
+    }
+    const subtotal = get().getSubtotal();
+    if (discount.type === 'PERCENT') {
+      return (subtotal * discount.value) / 100;
+    }
+    // FLAT discount
+    return Math.min(discount.value, subtotal); // Don't allow discount to exceed subtotal
+  },
+
   getTaxAmount: () => {
     const tax = get().selectedTax;
     if (!tax || !tax.percentage) {
       return 0;
     }
     const subtotal = get().getSubtotal();
-    return (subtotal * tax.percentage) / 100;
+    const discountAmount = get().getDiscountAmount();
+    // Tax is applied to subtotal after discount
+    return ((subtotal - discountAmount) * tax.percentage) / 100;
   },
 
   getTotal: () => {
     const subtotal = get().getSubtotal();
+    const discountAmount = get().getDiscountAmount();
     const taxAmount = get().getTaxAmount();
     const deliveryFee = get().deliveryFee;
-    return subtotal + taxAmount + deliveryFee;
+    return subtotal - discountAmount + taxAmount + deliveryFee;
   },
 
   getItemCount: () => {
