@@ -14,6 +14,7 @@ export default function AddEditInventoryModal({
   const [formData, setFormData] = useState({
     name: "",
     quantity: 0,
+    lowStockThreshold: 10,
   });
 
   useEffect(() => {
@@ -22,11 +23,13 @@ export default function AddEditInventoryModal({
       setFormData({
         name: item.name || "",
         quantity: item.quantity || 0,
+        lowStockThreshold: item.lowStockThreshold || 10,
       });
     } else {
       setFormData({
         name: "",
         quantity: 0,
+        lowStockThreshold: 10,
       });
     }
   }, [item, isOpen]);
@@ -49,7 +52,7 @@ export default function AddEditInventoryModal({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "quantity" ? Number(value) : value,
+      [name]: name === "quantity" || name === "lowStockThreshold" ? Number(value) : value,
     }));
   };
 
@@ -101,6 +104,23 @@ export default function AddEditInventoryModal({
                 placeholder="e.g., 100"
                 required
               />
+            </div>
+
+            <div>
+              <Label htmlFor="lowStockThreshold">Low Stock Threshold</Label>
+              <Input
+                id="lowStockThreshold"
+                name="lowStockThreshold"
+                type="number"
+                min="0"
+                value={formData.lowStockThreshold}
+                onChange={handleChange}
+                placeholder="e.g., 10"
+                required
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Alert will be triggered when stock falls to or below this value
+              </p>
             </div>
 
             <div className="flex gap-3 pt-4">

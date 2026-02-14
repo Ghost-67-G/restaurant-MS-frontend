@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import InventoryRow from "../components/inventory/InventoryRow";
 import AddEditInventoryModal from "../components/inventory/AddEditInventoryModal";
+import RecordWasteModal from "../components/inventory/RecordWasteModal";
 import Pagination from "../components/ui/pagination";
 import { Button } from "../components/ui/button";
 import {
@@ -17,7 +18,9 @@ export default function Inventory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isWasteModalOpen, setIsWasteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [wasteItem, setWasteItem] = useState(null);
 
   const { data: inventoryData = { results: [], page: 1, limit: 10, totalPages: 1, totalResults: 0 }, isLoading, isError } = useInventoryItems({
     page: currentPage,
@@ -87,6 +90,16 @@ export default function Inventory() {
     setCurrentPage(page);
   };
 
+  const handleOpenWasteModal = (item) => {
+    setWasteItem(item);
+    setIsWasteModalOpen(true);
+  };
+
+  const handleCloseWasteModal = () => {
+    setIsWasteModalOpen(false);
+    setWasteItem(null);
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto">
@@ -144,6 +157,7 @@ export default function Inventory() {
                         item={item}
                         onEdit={handleOpenEditModal}
                         onDelete={handleDelete}
+                        onRecordWaste={handleOpenWasteModal}
                       />
                     ))}
                   </tbody>
@@ -167,6 +181,12 @@ export default function Inventory() {
         onSubmit={handleSubmit}
         item={selectedItem}
         isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <RecordWasteModal
+        isOpen={isWasteModalOpen}
+        onClose={handleCloseWasteModal}
+        ingredient={wasteItem}
       />
     </DashboardLayout>
   );
