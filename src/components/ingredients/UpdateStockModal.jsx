@@ -39,7 +39,7 @@ export default function UpdateStockModal({ isOpen, onClose, onSubmit, ingredient
             <div className="bg-slate-50 p-4 rounded-lg">
               <p className="text-sm text-slate-600">Current Stock</p>
               <p className="text-2xl font-bold text-slate-900">
-                {ingredient.currentStock} {ingredient.unit}
+                {Number(ingredient.currentStock || 0).toFixed(2)} {ingredient.unit}
               </p>
             </div>
 

@@ -128,7 +128,7 @@ export default function AddEditIngredientModal({ isOpen, onClose, onSubmit, item
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.currentStock}
+                value={Number(formData.currentStock || 0).toFixed(2)}
                 onChange={handleChange}
                 required
               />

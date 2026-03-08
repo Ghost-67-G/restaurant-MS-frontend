@@ -131,7 +131,7 @@ export default function StockAlertsModal({ isOpen, onClose }) {
                               <div>
                                 <span className="text-slate-500">Current Stock:</span>
                                 <span className="ml-1 font-semibold text-orange-600">
-                                  {alert.currentStock}
+                                  {Number(alert.currentStock || 0).toFixed(2)} {alert.ingredientId?.unit || ''}
                                 </span>
                               </div>
                               <div>

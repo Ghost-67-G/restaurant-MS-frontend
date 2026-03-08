@@ -39,12 +39,12 @@ export default function IngredientRow({ ingredient, onEdit, onDelete, onUpdateSt
               isLowStock ? 'text-amber-600' : 'text-slate-900'
             }`}
           >
-            {ingredient.currentStock} {getUnitLabel(ingredient.unit)}
+            {Number(ingredient.currentStock || 0).toFixed(2)} {getUnitLabel(ingredient.unit)}
           </span>
         </div>
       </td>
       <td className="px-6 py-4 text-sm text-slate-600">
-        {ingredient.lowStockThreshold} {getUnitLabel(ingredient.unit)}
+        {Number(ingredient.lowStockThreshold || 0).toFixed(2)} {getUnitLabel(ingredient.unit)}
       </td>
       <td className="px-6 py-4">
         <Badge variant={ingredient.isActive ? 'success' : 'secondary'}>

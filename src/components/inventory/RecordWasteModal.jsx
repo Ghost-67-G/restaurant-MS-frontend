@@ -64,7 +64,7 @@ export default function RecordWasteModal({ isOpen, onClose, ingredient }) {
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                 <p className="font-semibold text-slate-900">{ingredient.name}</p>
                 <p className="text-sm text-slate-500 mt-1">
-                  Current Stock: <span className="font-semibold text-slate-700">{ingredient.currentStock}</span>
+                  Current Stock: <span className="font-semibold text-slate-700">{Number(ingredient.currentStock || 0).toFixed(2)}</span>
                 </p>
               </div>
             </div>
