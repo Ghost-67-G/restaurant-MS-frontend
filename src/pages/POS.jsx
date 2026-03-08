@@ -4,8 +4,10 @@ import toast from "react-hot-toast";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import MenuItemButton from "../components/pos/MenuItemButton";
 import CartPanel from "../components/pos/CartPanel";
+import InvoiceModal from "../components/orders/InvoiceModal";
 import { useInfiniteMenuItems } from "../hooks/useMenu";
-import { useCreateOrder } from "../hooks/useOrder";
+import { useCreateOrder, useUpdateOrder } from "../hooks/useOrder";
+import { useCreateInvoice } from "../hooks/useInvoice";
 import { useTaxes } from "../hooks/useTax";
 import { useCartStore } from "../stores/cart.store";
 import { useDebounce } from "../hooks/useDebounce";
@@ -14,9 +16,12 @@ import { Loader2, Search } from "lucide-react";
 export default function POS() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [quickInvoice, setQuickInvoice] = useState(null);
   const debouncedSearch = useDebounce(searchQuery, 300);
   const observer = useRef();
   const createOrderMutation = useCreateOrder();
+  const updateOrderMutation = useUpdateOrder();
+  const createInvoiceMutation = useCreateInvoice();
   const { data: taxesData } = useTaxes();
   const { items, getTotal, getSubtotal, getTaxAmount, getDiscountAmount, clearCart, orderType, tableNumber, deliveryFee, selectedTax, setSelectedTax, discount } = useCartStore();
 
@@ -56,23 +61,13 @@ export default function POS() {
 
   const menuItems = data?.pages.flatMap((page) => page.results) || [];
 
-  const handlePlaceOrder = () => {
-    if (items.length === 0) {
-      toast.error("Cart is empty");
-      return;
-    }
-
-    if (orderType === "dine-in" && !tableNumber) {
-      toast.error("Please enter table number for dine-in orders");
-      return;
-    }
-
+  const buildOrderPayload = () => {
     const subtotal = getSubtotal();
     const discountAmount = getDiscountAmount();
     const taxAmount = getTaxAmount();
     const total = getTotal();
 
-    const orderData = {
+    return {
       items: items.map((item) => ({
         menuItemId: item.id,
         name: item.name,
@@ -93,6 +88,28 @@ export default function POS() {
       orderType,
       ...(orderType === "dine-in" && { tableNumber }),
     };
+  };
+
+  const validateOrderBeforeSubmit = () => {
+    if (items.length === 0) {
+      toast.error("Cart is empty");
+      return false;
+    }
+
+    if (orderType === "dine-in" && !tableNumber) {
+      toast.error("Please enter table number for dine-in orders");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handlePlaceOrder = () => {
+    if (!validateOrderBeforeSubmit()) {
+      return;
+    }
+
+    const orderData = buildOrderPayload();
 
     createOrderMutation.mutate(orderData, {
       onSuccess: () => {
@@ -105,6 +122,32 @@ export default function POS() {
       },
     });
   };
+
+  const handleQuickCompleteWithInvoice = async () => {
+    if (!validateOrderBeforeSubmit()) {
+      return;
+    }
+
+    try {
+      const orderData = buildOrderPayload();
+      const createdOrder = await createOrderMutation.mutateAsync(orderData);
+
+      await updateOrderMutation.mutateAsync({
+        orderId: createdOrder.id,
+        data: { status: "completed" },
+      });
+
+      const invoice = await createInvoiceMutation.mutateAsync(createdOrder.id);
+      clearCart();
+      toast.success(`Completed & invoiced (${invoice.invoiceNumber})`);
+      setQuickInvoice(invoice);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed quick checkout");
+    }
+  };
+
+  const isSubmittingOrder =
+    createOrderMutation.isPending || updateOrderMutation.isPending || createInvoiceMutation.isPending;
 
   return (
     <DashboardLayout>
@@ -166,10 +209,20 @@ export default function POS() {
           </div>
 
           <div className="w-96 shrink-0">
-            <CartPanel onPlaceOrder={handlePlaceOrder} isPlacingOrder={createOrderMutation.isPending} />
+            <CartPanel
+              onPlaceOrder={handlePlaceOrder}
+              onQuickCompleteWithInvoice={handleQuickCompleteWithInvoice}
+              isPlacingOrder={isSubmittingOrder}
+            />
           </div>
         </div>
       </div>
+
+      <InvoiceModal
+        invoice={quickInvoice}
+        isOpen={!!quickInvoice}
+        onClose={() => setQuickInvoice(null)}
+      />
     </DashboardLayout>
   );
 }

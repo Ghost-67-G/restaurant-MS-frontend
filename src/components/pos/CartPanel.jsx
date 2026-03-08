@@ -4,7 +4,7 @@ import { useTaxes } from "../../hooks/useTax";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
-export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
+export default function CartPanel({ onPlaceOrder, onQuickCompleteWithInvoice, isPlacingOrder = false }) {
   const { 
     items, 
     incrementQuantity, 
@@ -260,13 +260,22 @@ export default function CartPanel({ onPlaceOrder, isPlacingOrder = false }) {
             <span className="text-orange-500">${total.toFixed(2)}</span>
           </div>
         </div>
-        <Button
-          onClick={onPlaceOrder}
-          disabled={items.length === 0 || isPlacingOrder}
-          className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white text-lg font-semibold"
-        >
-          {isPlacingOrder ? "Placing Order..." : "Place Order"}
-        </Button>
+        <div className="grid grid-cols-1 gap-2">
+          <Button
+            onClick={onQuickCompleteWithInvoice}
+            disabled={items.length === 0 || isPlacingOrder}
+            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold"
+          >
+            {isPlacingOrder ? "Processing..." : "Quick Complete + Invoice"}
+          </Button>
+          <Button
+            onClick={onPlaceOrder}
+            disabled={items.length === 0 || isPlacingOrder}
+            className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white text-lg font-semibold"
+          >
+            {isPlacingOrder ? "Processing..." : "Place Order"}
+          </Button>
+        </div>
       </div>
     </div>
   );

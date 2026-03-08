@@ -15,7 +15,7 @@ const STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-800" },
 ];
 
-export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStatus, isUpdating = false }) {
+export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStatus, isUpdating = false, userRole = 'owner' }) {
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [isVoidModalOpen, setIsVoidModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -42,10 +42,21 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
 
   const canChangeStatus = (newStatus) => {
     if (order.status === "cancelled") return false;
-    if (order.status === "completed" && newStatus !== "cancelled") return false;
-    if (order.status === "ready" && newStatus !== "completed" && newStatus !== "cancelled") return false;
+
+    // Only allow cancellation while order is pending or preparing.
+    if (newStatus === "cancelled") {
+      return order.status === "pending" || order.status === "preparing";
+    }
+
+    if (order.status === "completed") return false;
+    if (order.status === "ready" && newStatus !== "completed") return false;
     return true;
   };
+
+  const visibleStatusOptions = STATUS_OPTIONS.filter((status) => {
+    if (status.value !== "cancelled") return true;
+    return order.status === "pending" || order.status === "preparing";
+  });
 
   const calculateSubtotal = () => {
     return order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -102,6 +113,12 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
 
   const handleGenerateInvoice = async () => {
     try {
+      // If order is not completed yet, complete it first.
+      // Backend completion triggers inventory deduction automatically.
+      if (order.status !== 'completed' && userRole !== 'kitchen') {
+        await onUpdateStatus(order.id, 'completed');
+      }
+
       await createInvoiceMutation.mutateAsync(order.id);
       toast.success('Invoice generated successfully');
     } catch (error) {
@@ -118,8 +135,12 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
   };
 
   const canRefund = order.status === 'completed' && !order.isVoided;
-  const canVoid = order.status !== 'completed' && order.status !== 'cancelled' && !order.isVoided;
-  const canGenerateInvoice = order.status === 'completed';
+  const canVoid =
+    order.status !== 'completed' &&
+    order.status !== 'cancelled' &&
+    order.status !== 'ready' &&
+    !order.isVoided;
+  const canGenerateInvoice = order.status !== 'cancelled' && !order.isVoided && userRole !== 'kitchen';
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -185,7 +206,7 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
             <div>
               <h4 className="text-sm font-medium text-slate-700 mb-3">Update Status</h4>
               <div className="flex flex-wrap gap-2">
-                {STATUS_OPTIONS.map((status) => {
+                {visibleStatusOptions.map((status) => {
                   const isCurrent = status.value === order.status;
                   const isDisabled = !canChangeStatus(status.value) || isCurrent;
 
@@ -399,7 +420,7 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
                   disabled={loadingInvoice || createInvoiceMutation.isPending}
                 >
                   <FileText className="h-4 w-4" />
-                  {invoice ? 'View Invoice' : 'Generate Invoice'}
+                  {invoice ? 'View Invoice' : order.status === 'completed' ? 'Generate Invoice' : 'Complete & Generate Invoice'}
                 </Button>
               )}
               {canRefund && (

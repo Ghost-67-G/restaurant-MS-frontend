@@ -83,20 +83,18 @@ export default function Orders() {
     ? ordersData.results.find((order) => order.id === selectedOrderId)
     : null;
 
-  const handleUpdateStatus = (orderId, status) => {
-    updateOrderMutation.mutate(
-      { orderId, data: { status } },
-      {
-        onSuccess: () => {
-          toast.success("Order updated successfully!");
-        },
-        onError: (error) => {
-          toast.error(
-            error.response?.data?.message || "Failed to update order",
-          );
-        },
-      },
-    );
+  const handleUpdateStatus = async (orderId, status) => {
+    try {
+      const updatedOrder = await updateOrderMutation.mutateAsync({
+        orderId,
+        data: { status },
+      });
+      toast.success("Order updated successfully!");
+      return updatedOrder;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update order");
+      throw error;
+    }
   };
 
   const handlePageChange = (page) => {
@@ -211,6 +209,7 @@ export default function Orders() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onUpdateStatus={handleUpdateStatus}
+        userRole={userRole}
       />
     </DashboardLayout>
   );
