@@ -19,7 +19,7 @@ export default function POS() {
   const [searchQuery, setSearchQuery] = useState("");
   const [quickInvoice, setQuickInvoice] = useState(null);
   const [isQuickConfirmOpen, setIsQuickConfirmOpen] = useState(false);
-  const [hasInitializedTax, setHasInitializedTax] = useState(false);
+  const hasInitializedTaxRef = useRef(false);
   const debouncedSearch = useDebounce(searchQuery, 300);
   const observer = useRef();
   const createOrderMutation = useCreateOrder();
@@ -30,11 +30,11 @@ export default function POS() {
 
   // Set default tax (first available) when taxes load - only once
   useEffect(() => {
-    if (!hasInitializedTax && taxesData?.results && taxesData.results.length > 0 && selectedTax === null) {
+    if (!hasInitializedTaxRef.current && taxesData?.results && taxesData.results.length > 0 && selectedTax === null) {
       setSelectedTax(taxesData.results[0]);
-      setHasInitializedTax(true);
+      hasInitializedTaxRef.current = true;
     }
-  }, [taxesData, selectedTax, setSelectedTax, hasInitializedTax]);
+  }, [taxesData, selectedTax, setSelectedTax]);
 
   const {
     data,

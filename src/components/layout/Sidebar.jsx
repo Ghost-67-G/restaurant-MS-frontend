@@ -13,7 +13,7 @@ const navigation = [
   // { name: "Inventory", href: "/inventory", icon: Package, roles: ["owner"] }, // Temporarily disabled
   { name: "Users", href: "/users", icon: Users, roles: ["owner"] },
   { name: "Tax Settings", href: "/tax-settings", icon: Settings, roles: ["owner"] },
-  { name: "Reports", href: "/reports", icon: BarChart3, roles: ["owner"], disabled: true },
+  { name: "Reports", href: "/reports", icon: BarChart3, roles: ["owner"] },
 ];
 
 export default function Sidebar() {
