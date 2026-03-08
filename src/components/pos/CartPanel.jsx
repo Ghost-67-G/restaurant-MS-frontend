@@ -25,6 +25,10 @@ export default function CartPanel({ onPlaceOrder, onQuickCompleteWithInvoice, is
     setSelectedTax,
     discount,
     setDiscount,
+    orderNote,
+    setOrderNote,
+    setItemModifiers,
+    setItemNote,
   } = useCartStore();
 
   const { data: taxesData } = useTaxes();
@@ -39,6 +43,23 @@ export default function CartPanel({ onPlaceOrder, onQuickCompleteWithInvoice, is
     { value: "takeaway", label: "Takeaway", icon: ShoppingBag },
     { value: "delivery", label: "Delivery", icon: Truck },
   ];
+
+  const getLineTotal = (item) => {
+    const modifiersTotal = (item.selectedModifiers || []).reduce(
+      (sum, modifier) => sum + Number(modifier.price || 0),
+      0
+    );
+    return (Number(item.price || 0) + modifiersTotal) * item.quantity;
+  };
+
+  const toggleModifier = (item, modifier) => {
+    const selected = item.selectedModifiers || [];
+    const exists = selected.some((m) => m.name === modifier.name);
+    const updated = exists
+      ? selected.filter((m) => m.name !== modifier.name)
+      : [...selected, { name: modifier.name, price: Number(modifier.price || 0) }];
+    setItemModifiers(item.id, updated);
+  };
 
   return (
     <div className="flex flex-col h-full bg-white border-l border-slate-200">
@@ -220,8 +241,43 @@ export default function CartPanel({ onPlaceOrder, onQuickCompleteWithInvoice, is
                   </button>
                 </div>
                 <p className="font-bold text-slate-900">
-                  ${(item.price * item.quantity).toFixed(2)}
+                  ${getLineTotal(item).toFixed(2)}
                 </p>
+              </div>
+
+              {item.modifiers?.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase mb-1.5">Extras</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.modifiers.map((modifier) => {
+                      const isSelected = (item.selectedModifiers || []).some((m) => m.name === modifier.name);
+                      return (
+                        <button
+                          key={modifier.name}
+                          type="button"
+                          onClick={() => toggleModifier(item, modifier)}
+                          className={`text-xs px-2 py-1 rounded border transition-colors ${
+                            isSelected
+                              ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                              : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          {modifier.name} (+${Number(modifier.price || 0).toFixed(2)})
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-3">
+                <Input
+                  type="text"
+                  value={item.itemNote || ""}
+                  onChange={(e) => setItemNote(item.id, e.target.value)}
+                  placeholder="Item note (e.g. less spicy)"
+                  className="h-8 text-xs"
+                />
               </div>
             </div>
           ))
@@ -229,6 +285,16 @@ export default function CartPanel({ onPlaceOrder, onQuickCompleteWithInvoice, is
       </div>
 
       <div className="border-t border-slate-200 p-4 bg-slate-50 space-y-4">
+        <div>
+          <label className="text-xs font-semibold text-slate-600 mb-2 block">ORDER NOTE</label>
+          <textarea
+            value={orderNote}
+            onChange={(e) => setOrderNote(e.target.value)}
+            rows={2}
+            placeholder="Optional note for kitchen"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+          />
+        </div>
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-slate-600">
             <span>Subtotal</span>

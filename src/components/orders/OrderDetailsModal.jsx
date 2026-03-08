@@ -59,7 +59,15 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
   });
 
   const calculateSubtotal = () => {
-    return order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return order.items.reduce((sum, item) => {
+      const modifierTotal = (item.selectedModifiers || []).reduce((acc, modifier) => acc + Number(modifier.price || 0), 0);
+      return sum + (Number(item.price || 0) + modifierTotal) * item.quantity;
+    }, 0);
+  };
+
+  const getItemLineTotal = (item) => {
+    const modifierTotal = (item.selectedModifiers || []).reduce((acc, modifier) => acc + Number(modifier.price || 0), 0);
+    return (Number(item.price || 0) + modifierTotal) * item.quantity;
   };
 
   const getOrderTypeIcon = () => {
@@ -255,7 +263,15 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
                     {order.items.map((item, idx) => (
                       <tr key={idx}>
                         <td className="px-4 py-3 text-sm text-slate-900">
-                          {item.name}
+                          <p>{item.name}</p>
+                          {item.selectedModifiers?.length > 0 && (
+                            <p className="text-xs text-slate-500 mt-1">
+                              Extras: {item.selectedModifiers.map((modifier) => `${modifier.name} (+$${Number(modifier.price || 0).toFixed(2)})`).join(', ')}
+                            </p>
+                          )}
+                          {item.itemNote && (
+                            <p className="text-xs text-slate-500 mt-1">Note: {item.itemNote}</p>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-900 text-right">
                           {item.quantity}
@@ -264,7 +280,7 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onUpdateStat
                           ${Number(item.price).toFixed(2)}
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
-                          ${(Number(item.price) * item.quantity).toFixed(2)}
+                          ${getItemLineTotal(item).toFixed(2)}
                         </td>
                       </tr>
                     ))}

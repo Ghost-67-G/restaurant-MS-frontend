@@ -17,20 +17,22 @@ export default function POS() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [quickInvoice, setQuickInvoice] = useState(null);
+  const [hasInitializedTax, setHasInitializedTax] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 300);
   const observer = useRef();
   const createOrderMutation = useCreateOrder();
   const updateOrderMutation = useUpdateOrder();
   const createInvoiceMutation = useCreateInvoice();
   const { data: taxesData } = useTaxes();
-  const { items, getTotal, getSubtotal, getTaxAmount, getDiscountAmount, clearCart, orderType, tableNumber, deliveryFee, selectedTax, setSelectedTax, discount } = useCartStore();
+  const { items, getTotal, getSubtotal, getTaxAmount, getDiscountAmount, clearCart, orderType, tableNumber, deliveryFee, selectedTax, setSelectedTax, discount, orderNote } = useCartStore();
 
   // Set default tax (first available) when taxes load - only once
   useEffect(() => {
-    if (taxesData?.results && taxesData.results.length > 0 && selectedTax === null) {
+    if (!hasInitializedTax && taxesData?.results && taxesData.results.length > 0 && selectedTax === null) {
       setSelectedTax(taxesData.results[0]);
+      setHasInitializedTax(true);
     }
-  }, [taxesData]);
+  }, [taxesData, selectedTax, setSelectedTax, hasInitializedTax]);
 
   const {
     data,
@@ -73,6 +75,8 @@ export default function POS() {
         name: item.name,
         price: item.price,
         quantity: item.quantity,
+        selectedModifiers: item.selectedModifiers || [],
+        itemNote: item.itemNote || "",
       })),
       subtotal,
       ...(discount && {
@@ -87,6 +91,7 @@ export default function POS() {
       totalAmount: total,
       orderType,
       ...(orderType === "dine-in" && { tableNumber }),
+      ...(orderNote && { notes: orderNote.trim() }),
     };
   };
 

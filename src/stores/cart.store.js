@@ -7,6 +7,7 @@ export const useCartStore = create((set, get) => ({
   deliveryFee: 0,
   selectedTax: null, // Selected tax for this order
   discount: null, // { type: 'PERCENT' | 'FLAT', value: number }
+  orderNote: "",
 
   setDiscount: (discount) => {
     set({ discount });
@@ -28,6 +29,10 @@ export const useCartStore = create((set, get) => ({
     set({ deliveryFee: fee });
   },
 
+  setOrderNote: (note) => {
+    set({ orderNote: note });
+  },
+
   addItem: (menuItem) => {
     const items = get().items;
     const existingItem = items.find((item) => item.id === menuItem.id);
@@ -42,9 +47,33 @@ export const useCartStore = create((set, get) => ({
       });
     } else {
       set({
-        items: [...items, { ...menuItem, quantity: 1 }],
+        items: [
+          ...items,
+          {
+            ...menuItem,
+            quantity: 1,
+            selectedModifiers: [],
+            itemNote: "",
+          },
+        ],
       });
     }
+  },
+
+  setItemModifiers: (itemId, modifiers) => {
+    set({
+      items: get().items.map((item) =>
+        item.id === itemId ? { ...item, selectedModifiers: modifiers } : item
+      ),
+    });
+  },
+
+  setItemNote: (itemId, note) => {
+    set({
+      items: get().items.map((item) =>
+        item.id === itemId ? { ...item, itemNote: note } : item
+      ),
+    });
   },
 
   removeItem: (itemId) => {
@@ -96,15 +125,17 @@ export const useCartStore = create((set, get) => ({
       tableNumber: "",
       deliveryFee: 0,
       discount: null,
+      orderNote: "",
       // Don't clear selectedTax as it should persist
     });
   },
 
   getSubtotal: () => {
-    return get().items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
+    return get().items.reduce((total, item) => {
+      const modifierTotal = (item.selectedModifiers || []).reduce((sum, modifier) => sum + Number(modifier.price || 0), 0);
+      const unitPrice = Number(item.price || 0) + modifierTotal;
+      return total + unitPrice * item.quantity;
+    }, 0);
   },
 
   getDiscountAmount: () => {

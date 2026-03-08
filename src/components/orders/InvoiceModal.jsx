@@ -14,6 +14,14 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
     });
   };
 
+  const getItemLineTotal = (item) => {
+    const modifiersTotal = (item.selectedModifiers || []).reduce(
+      (sum, modifier) => sum + Number(modifier.price || 0),
+      0
+    );
+    return (Number(item.price || 0) + modifiersTotal) * item.quantity;
+  };
+
   const handlePrint = () => {
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     
@@ -326,16 +334,31 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
                 </tr>
               </thead>
               <tbody>
-                ${snapshot.items.map(item => `
+                ${snapshot.items.map(item => {
+                  const lineTotal = getItemLineTotal(item);
+                  const extrasText = (item.selectedModifiers || []).map((m) => `${m.name} (+$${Number(m.price || 0).toFixed(2)})`).join(', ');
+                  return `
                   <tr>
-                    <td>${item.name}</td>
+                    <td>
+                      ${item.name}
+                      ${extrasText ? `<div style="font-size:11px;color:#64748b;margin-top:4px;">Extras: ${extrasText}</div>` : ''}
+                      ${item.itemNote ? `<div style="font-size:11px;color:#64748b;margin-top:2px;">Note: ${item.itemNote}</div>` : ''}
+                    </td>
                     <td class="text-center">${item.quantity}</td>
                     <td class="text-right">$${Number(item.price).toFixed(2)}</td>
-                    <td class="text-right amount">$${(item.price * item.quantity).toFixed(2)}</td>
+                    <td class="text-right amount">$${lineTotal.toFixed(2)}</td>
                   </tr>
-                `).join('')}
+                `;
+                }).join('')}
               </tbody>
             </table>
+
+            ${snapshot.notes ? `
+              <div style="margin-top:20px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+                <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:6px;">Order Note</div>
+                <div style="font-size:13px;color:#1e293b;">${snapshot.notes}</div>
+              </div>
+            ` : ''}
             
             <!-- Totals -->
             <div class="totals-section">
@@ -533,17 +556,34 @@ export default function InvoiceModal({ invoice, isOpen, onClose }) {
                       <tbody className="divide-y divide-slate-200">
                         {snapshot.items.map((item, index) => (
                           <tr key={index}>
-                            <td className="py-3 px-4 text-sm text-slate-900">{item.name}</td>
+                            <td className="py-3 px-4 text-sm text-slate-900">
+                              <p>{item.name}</p>
+                              {item.selectedModifiers?.length > 0 && (
+                                <p className="text-xs text-slate-500 mt-1">
+                                  Extras: {item.selectedModifiers.map((modifier) => `${modifier.name} (+$${Number(modifier.price || 0).toFixed(2)})`).join(', ')}
+                                </p>
+                              )}
+                              {item.itemNote && (
+                                <p className="text-xs text-slate-500 mt-1">Note: {item.itemNote}</p>
+                              )}
+                            </td>
                             <td className="py-3 px-4 text-sm text-slate-700 text-center font-medium">{item.quantity}</td>
                             <td className="py-3 px-4 text-sm text-slate-600 text-right">${Number(item.price).toFixed(2)}</td>
                             <td className="py-3 px-4 text-sm text-slate-900 text-right font-semibold">
-                              ${(item.price * item.quantity).toFixed(2)}
+                              ${getItemLineTotal(item).toFixed(2)}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+
+                  {snapshot.notes && (
+                    <div className="mb-8 p-3 bg-slate-100 border border-slate-200 rounded">
+                      <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Order Note</p>
+                      <p className="text-sm text-slate-800">{snapshot.notes}</p>
+                    </div>
+                  )}
 
                   {/* Totals */}
                   <div className="flex justify-end mb-8">
