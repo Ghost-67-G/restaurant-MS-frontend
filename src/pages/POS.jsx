@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import MenuItemButton from "../components/pos/MenuItemButton";
 import CartPanel from "../components/pos/CartPanel";
+import QuickCheckoutConfirmModal from "../components/pos/QuickCheckoutConfirmModal";
 import InvoiceModal from "../components/orders/InvoiceModal";
 import { useInfiniteMenuItems } from "../hooks/useMenu";
 import { useCreateOrder, useUpdateOrder } from "../hooks/useOrder";
@@ -17,6 +18,7 @@ export default function POS() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [quickInvoice, setQuickInvoice] = useState(null);
+  const [isQuickConfirmOpen, setIsQuickConfirmOpen] = useState(false);
   const [hasInitializedTax, setHasInitializedTax] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 300);
   const observer = useRef();
@@ -145,10 +147,19 @@ export default function POS() {
       const invoice = await createInvoiceMutation.mutateAsync(createdOrder.id);
       clearCart();
       toast.success(`Completed & invoiced (${invoice.invoiceNumber})`);
+      setIsQuickConfirmOpen(false);
       setQuickInvoice(invoice);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed quick checkout");
     }
+  };
+
+  const handleOpenQuickCheckoutConfirm = () => {
+    if (!validateOrderBeforeSubmit()) {
+      return;
+    }
+
+    setIsQuickConfirmOpen(true);
   };
 
   const isSubmittingOrder =
@@ -216,12 +227,19 @@ export default function POS() {
           <div className="w-96 shrink-0">
             <CartPanel
               onPlaceOrder={handlePlaceOrder}
-              onQuickCompleteWithInvoice={handleQuickCompleteWithInvoice}
+              onOpenQuickCheckoutConfirm={handleOpenQuickCheckoutConfirm}
               isPlacingOrder={isSubmittingOrder}
             />
           </div>
         </div>
       </div>
+
+      <QuickCheckoutConfirmModal
+        isOpen={isQuickConfirmOpen}
+        onClose={() => setIsQuickConfirmOpen(false)}
+        onConfirm={handleQuickCompleteWithInvoice}
+        isProcessing={isSubmittingOrder}
+      />
 
       <InvoiceModal
         invoice={quickInvoice}

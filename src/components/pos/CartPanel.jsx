@@ -4,7 +4,7 @@ import { useTaxes } from "../../hooks/useTax";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
-export default function CartPanel({ onPlaceOrder, onQuickCompleteWithInvoice, isPlacingOrder = false }) {
+export default function CartPanel({ onPlaceOrder, onOpenQuickCheckoutConfirm, isPlacingOrder = false }) {
   const { 
     items, 
     incrementQuantity, 
@@ -328,7 +328,7 @@ export default function CartPanel({ onPlaceOrder, onQuickCompleteWithInvoice, is
         </div>
         <div className="grid grid-cols-1 gap-2">
           <Button
-            onClick={onQuickCompleteWithInvoice}
+            onClick={onOpenQuickCheckoutConfirm}
             disabled={items.length === 0 || isPlacingOrder}
             className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold"
           >
