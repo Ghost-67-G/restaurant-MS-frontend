@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const apiBaseURL = window?.rmsDesktop?.isDesktop ? "/api" : import.meta.env.VITE_API_URL;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: apiBaseURL,
   withCredentials: true,
 });
 
