@@ -35,7 +35,7 @@ export default function Sidebar() {
             <div className="bg-orange-500 p-1.5 rounded-lg">
               <Utensils className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold">DevsDesk</span>
+            <span className="text-lg font-bold">Codingstack</span>
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

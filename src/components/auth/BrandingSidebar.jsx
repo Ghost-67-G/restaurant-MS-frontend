@@ -8,7 +8,7 @@ export default function BrandingSidebar() {
           <div className="bg-orange-500 p-2 rounded-lg">
             <Utensils className="h-6 w-6" />
           </div>
-          <span className="text-xl font-bold">DevsDesk</span>
+          <span className="text-xl font-bold">Codingstack</span>
         </div>
         <div className="max-w-lg">
           <h1 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">
@@ -49,7 +49,7 @@ export default function BrandingSidebar() {
         </div>
       </div>
       <div className="text-sm text-slate-400">
-        © 2026 DevsDesk. All rights reserved.
+        © 2026 Codingstack. All rights reserved.
       </div>
     </div>
   );

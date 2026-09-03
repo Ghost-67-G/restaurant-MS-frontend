@@ -6,7 +6,7 @@ export default function MobileLogo() {
       <div className="bg-orange-500 p-2 rounded-lg">
         <Utensils className="h-6 w-6 text-white" />
       </div>
-      <span className="text-xl font-bold">DevsDesk</span>
+      <span className="text-xl font-bold">Codingstack</span>
     </div>
   );
 }

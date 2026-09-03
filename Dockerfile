@@ -10,7 +10,7 @@ RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
     else npm install; fi
 
 # Pass the API URL as build arg so Vite bakes it in
-ARG VITE_API_URL=https://rmsapi.devsdesk.site/api/
+ARG VITE_API_URL=https://rmsapi.codingstack.site/api/
 ENV VITE_API_URL=$VITE_API_URL
 
 COPY . .
